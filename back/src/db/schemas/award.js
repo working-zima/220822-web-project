@@ -1,13 +1,22 @@
 import { Schema, model } from "mongoose";
 
-const Awardchema = new Schema(
+const AwardSchema = new Schema(
   {
-    id: {
+    user_id: {
       type: String,
       required: true,
     },
-    list: {
-      type: Array,
+    title: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+      required: false,
+      default: "",
+    },
+    awardDate: {
+      type: String,
       required: true,
     },
   },
@@ -16,6 +25,6 @@ const Awardchema = new Schema(
   }
 );
 
-const AwardModel = model("Award", Awardchema);
+const AwardModel = model("Award", AwardSchema);
 
 export { AwardModel };

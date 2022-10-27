@@ -1,81 +1,89 @@
 import is from "@sindresorhus/is";
 import { Router } from "express";
-import { awardAuthService } from "../services/awardService";
+import { login_required } from "../middlewares/login_required";
+import { awardService } from "../services/awardService";
 
-const awardAuthRouter = Router();
-
-awardAuthRouter.post('/award/create', async function(req, res, next) {
+const awardRouter = Router();
+// Award 등록
+awardRouter.post('/award', login_required, async function(req, res, next) {
     try {
-        if(is.emptyObject(req.body))
+        if(is.emptyObject(req.body)) {
             throw new Error("headers의 Content-Type을 application/json으로 설정해주세요");
-
+        }
         const user_id = req.body.user_id;
         const title = req.body.title;
         const description = req.body.description;
-        const newAward = await awardAuthService.createAward({
+        const awardDate = req.body.awardDate;
+        const newAward = await awardService.addAward({
             user_id,
             title,
             description,
+            awardDate
         });
 
         if (newAward.errorMessage) {
             throw new Error(newAward.errorMessage);
         }
-        
+
         res.status(201).json(newAward);
     } catch(error) {
         next(error);
     }
 });
 
-awardAuthRouter.put('/awards/:id', async function(req, res, next) {
+// Award 목록 가져오기
+awardRouter.get("/awards/:user_id", login_required, async function (req, res, next) {
+      try {
+        const user_id = req.params.user_id;
+        const currentAwardInfo = await awardService.getAwards({ user_id });
+
+        if(currentAwardInfo) {
+            if (currentAwardInfo.errorMessage) {
+                throw new Error(currentAwardInfo.errorMessage);
+            }
+            
+            res.status(200).send(currentAwardInfo);  
+        }
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+// 특정 Award 수정
+awardRouter.put('/award/:object_id', login_required, async function(req, res, next) {
     try {
-        const user_id = req.params.id;
+        const object_id = req.params.object_id;
         const title = req.body.title ?? null;
         const description = req.body.description ?? null;
+        const awardDate = req.body.awardDate ?? null;
+        const toUpdate = { title, description, awardDate };
+        const updatedAward = await awardService.setAward({ object_id, toUpdate });
 
-        const toUpdate = { title, description };
+        if(updatedAward.errorMessage) {
+            throw new Error(updatedAward.errorMessage);
+        }
         
-        const updateAward = await awardAuthService.setAward({ user_id, toUpdate });
-
-        if(updateAward.errorMessage) {
-            throw new Error(updateAward.errorMessage);
-        }
-        res.status(200).json(updateAward);
+        res.status(200).json(updatedAward);
     } catch(error) {
         next(error);
     }
 });
 
-awardAuthRouter.get('/awardlist/:id', async function(req, res, next) {
+// 특정 Award 삭제
+awardRouter.delete('/awards/:object_id', login_required, async function(req, res, next) {
     try {
-        const user_id = req.params.id;
-        const currentAwardInfo = await awardAuthService.getAward({ user_id });
-
-        if(currentAwardInfo.errorMessage) {
-            throw new Error(currentAwardInfo.errorMessage);
-        }
-
-        res.status(200).json(currentAwardInfo);
-    } catch(error) {
-        next(error);
-    }
-});
-
-awardAuthRouter.post('/award/delete', async function(req, res, next) {
-    try {
-        console.log("성공")
-        const user_id = req.params.user_id;
-
-        const deleteAwardInfo = await awardAuthService.deleteAward({ user_id });
+        const object_id = req.params.object_id;
+        const deleteAward = await awardService.delAward({ object_id });
         
-        if (deleteAwardInfo.errorMessage) {
-            throw new Error(deleteAwardInfo.errorMessage);
+        if (deleteAward.errorMessage) {
+            throw new Error(deleteAward.errorMessage);
         }
-        res.status(200).json(deleteAwardInfo);
+        
+        res.status(200).json(deleteAward);
     } catch(error) {
         next(error);
     }
 });
 
-export { awardAuthRouter };
+export { awardRouter };

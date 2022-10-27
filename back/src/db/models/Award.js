@@ -1,42 +1,47 @@
 import { AwardModel } from "../schemas/award";
 
 class Award {
-    // Award 데이터 생성
+    // Award 등록
     static async create({ newAward }) {
         const createNewAward = await AwardModel.create(newAward);
+
         return createNewAward;
     }
 
-    // Award 데이터 가져오기
-    static async findById({ user_id }) {
-        // console.log(user_id);
-        const Award = await AwardModel.findOne({user_id: user_id});
-        return Award;
+    // Award 목록 가져오기
+    static async findAll({ user_id }) {
+        const Awards = await AwardModel.find({user_id: user_id},);
+        const award_list = Awards.map((data) => {
+            return {
+                object_id: data._id,
+                user_id: data.user_id,
+                title: data.title,
+                description: data.description,
+                awardDate: data.awardDate.substr(0, 10)
+            };
+        });
+        return award_list;
     }
 
-    // Award 데이터 업데이트
-    static async update({ user_id, fieldToUpdate, newValue }) {
-        console.log(fieldToUpdate)
-        console.log(newValue)
-        const filter = { user_id: user_id };
-        const update = { list:[{ [fieldToUpdate]: newValue }] };
-        // 배열안에 든 객체들을 추가 및 수정! 방법 찾기
+    // 특정 Award 수정
+    static async update({ object_id, fieldToUpdate, newValue }){
+        const filter = { _id: object_id };
+        const update = { [fieldToUpdate]: newValue };
         const option = { returnOriginal: false };
-
-        const updatedUser = await AwardModel.findOneAndUpdate(
+        const updatedAward = await AwardModel.findOneAndUpdate(
             filter,
             update,
             option
-        )
-
-        return AwardModel;
+        );
+        
+        return updatedAward;
     }
 
-    // Award 데이터 삭제
-    static async remove({ user_id }) {
-        const filter = { id: user_id };
-        const Award = await AwardModel.findOneAndDelete({ filter });
-        
+    // 특정 Award 삭제
+    static async delete({ object_id }) {
+        const filter = { _id: object_id };
+        const Award = await AwardModel.deleteOne(filter);
+
         return Award;
     }
 }
